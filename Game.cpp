@@ -53,6 +53,7 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
+
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
@@ -159,8 +160,11 @@ void Game::CreateBasicGeometry()
 
 	unsigned int triangleIndices[] = { 0, 1, 2 };
 
+	XMFLOAT4 triangleColorTint = XMFLOAT4(0.25f, 1.0f, 0.25f, 1.0f);
+	XMFLOAT3 triangleOffset = XMFLOAT3(0.25f, 0.0f, 0.0f);
+
 	triangle = std::make_shared<Mesh>(triangleVertices, sizeof(triangleVertices) / sizeof(triangleVertices[0]),
-		triangleIndices, sizeof(triangleIndices) / sizeof(triangleIndices[0]), device, context);
+		triangleIndices, sizeof(triangleIndices) / sizeof(triangleIndices[0]), triangleColorTint, triangleOffset, device, context);
 
 	// Create Rect Mesh
 	Vertex rectVertices[] =
@@ -173,8 +177,11 @@ void Game::CreateBasicGeometry()
 
 	unsigned int rectIndices[] = { 0, 1, 2, 2, 1, 3 };
 
+	XMFLOAT4 rectColorTint = XMFLOAT4(1.0f, 0.0f, 0.25f, 1.0f);
+	XMFLOAT3 rectOffset = XMFLOAT3(0.5f, 0.0f, 0.0f);
+
 	rect = std::make_shared<Mesh>(rectVertices, sizeof(rectVertices) / sizeof(rectVertices[0]),
-		rectIndices, sizeof(rectIndices) / sizeof(rectIndices[0]), device, context);
+		rectIndices, sizeof(rectIndices) / sizeof(rectIndices[0]), rectColorTint, rectOffset, device, context);
 
 	// Create Pentagon Mesh
 	Vertex pentagonVertices[] =
@@ -189,8 +196,11 @@ void Game::CreateBasicGeometry()
 
 	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 3, 4, 4, 5, 0, 0, 5, 1 };
 
+	XMFLOAT4 pentagonColorTint = XMFLOAT4(0.0f, 0.25f, 1.0f, 1.0f);
+	XMFLOAT3 pentagonOffset = XMFLOAT3(0.0f, 0.25f, 0.0f);
+
 	pentagon = std::make_shared<Mesh>(pentagonVertices, sizeof(pentagonVertices) / sizeof(pentagonVertices[0]),
-		pentagonIndices, sizeof(pentagonIndices) / sizeof(pentagonIndices[0]), device, context);
+		pentagonIndices, sizeof(pentagonIndices) / sizeof(pentagonIndices[0]), pentagonColorTint, pentagonOffset, device, context);
 }
 
 

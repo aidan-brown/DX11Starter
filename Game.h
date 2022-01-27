@@ -5,6 +5,7 @@
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 #include <memory>
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 class Game 
 	: public DXCore
@@ -39,6 +40,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBufferVS;
 
 	std::shared_ptr<Mesh> triangle, rect, pentagon;
 

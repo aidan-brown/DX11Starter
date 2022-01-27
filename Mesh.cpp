@@ -3,9 +3,12 @@
 // For the DirectX Math library
 using namespace DirectX;
 
-Mesh::Mesh(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context) {
+Mesh::Mesh(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, DirectX::XMFLOAT4 colorTint, DirectX::XMFLOAT3 offset, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context) {
 	Mesh::context = context;
 	Mesh::indexCount = indexCount;
+	Mesh::vsData = {};
+	Mesh::vsData.colorTint = colorTint;
+	Mesh::vsData.offset = offset;
 
 	// Create the VERTEX BUFFER description -----------------------------------
 	// - The description is created on the stack because we only need
@@ -46,6 +49,18 @@ Mesh::Mesh(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCo
 	// Actually create the buffer with the initial data
 	// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
 	device->CreateBuffer(&ibd, &initialIndexData, Mesh::indexBuffer.GetAddressOf());
+
+	// Get size as the next multiple of 16 (instead of hardcoding a size here!)  
+	unsigned int size = sizeof(VertexShaderExternalData);
+	size = (size + 15) / 16 * 16; // This will work even if your struct size changes
+
+	D3D11_BUFFER_DESC cbDesc = {};
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth = size;
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	device->CreateBuffer(&cbDesc, 0, Mesh::constantBufferVS.GetAddressOf());
 }
 
 Mesh::~Mesh() {
@@ -65,6 +80,14 @@ int Mesh::GetIndexCount() {
 }
 
 void Mesh::Draw() {
+
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	context->Map(Mesh::constantBufferVS.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+	memcpy(mappedBuffer.pData, &(Mesh::vsData), sizeof(Mesh::vsData));
+	context->Unmap(Mesh::constantBufferVS.Get(), 0);
+
+	context->VSSetConstantBuffers(0, 1, Mesh::constantBufferVS.GetAddressOf());
+
 	// Set buffers in the input assembler
 	//  - Do this ONCE PER OBJECT you're drawing, since each object might
 	//    have different geometry.
