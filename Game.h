@@ -6,6 +6,7 @@
 #include <memory>
 #include "Mesh.h"
 #include "BufferStructs.h"
+#include "GameEntity.h"
 
 class Game 
 	: public DXCore
@@ -43,6 +44,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBufferVS;
 
 	std::shared_ptr<Mesh> triangle, rect, pentagon;
-
+	GameEntity* ge1;
+	GameEntity* ge2;
+	GameEntity* ge3;
+	GameEntity* ge4;
+	GameEntity* ge5;
 };
 

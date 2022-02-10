@@ -44,7 +44,9 @@ Game::~Game()
 	// we don't need to explicitly clean up those DirectX objects
 	// - If we weren't using smart pointers, we'd need
 	//   to call Release() on each DirectX object created in Game
-
+	delete(ge1);
+	delete(ge2);
+	delete(ge3);
 }
 
 // --------------------------------------------------------
@@ -59,6 +61,12 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateBasicGeometry();
+
+	ge1 = new GameEntity(triangle.get());
+	ge2 = new GameEntity(pentagon.get());
+	ge3 = new GameEntity(rect.get());
+	ge4 = new GameEntity(triangle.get());
+	ge5 = new GameEntity(triangle.get());
 	
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -153,18 +161,17 @@ void Game::CreateBasicGeometry()
 	// Create Triangle Mesh
 	Vertex triangleVertices[] =
 	{
-		{ XMFLOAT3(+0.0f, +0.75f, +0.0f), red },
-		{ XMFLOAT3(+0.25f, +0.25f, +0.0f), blue },
-		{ XMFLOAT3(-0.25f, +0.25f, +0.0f), green },
+		{ XMFLOAT3(+0.0f, +0.25f, +0.0f), red },
+		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), blue },
+		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), green },
 	};
 
 	unsigned int triangleIndices[] = { 0, 1, 2 };
 
 	XMFLOAT4 triangleColorTint = XMFLOAT4(0.25f, 1.0f, 0.25f, 1.0f);
-	XMFLOAT3 triangleOffset = XMFLOAT3(0.25f, 0.0f, 0.0f);
 
 	triangle = std::make_shared<Mesh>(triangleVertices, sizeof(triangleVertices) / sizeof(triangleVertices[0]),
-		triangleIndices, sizeof(triangleIndices) / sizeof(triangleIndices[0]), triangleColorTint, triangleOffset, device, context);
+		triangleIndices, sizeof(triangleIndices) / sizeof(triangleIndices[0]), triangleColorTint, device, context);
 
 	// Create Rect Mesh
 	Vertex rectVertices[] =
@@ -178,10 +185,9 @@ void Game::CreateBasicGeometry()
 	unsigned int rectIndices[] = { 0, 1, 2, 2, 1, 3 };
 
 	XMFLOAT4 rectColorTint = XMFLOAT4(1.0f, 0.0f, 0.25f, 1.0f);
-	XMFLOAT3 rectOffset = XMFLOAT3(0.5f, 0.0f, 0.0f);
 
 	rect = std::make_shared<Mesh>(rectVertices, sizeof(rectVertices) / sizeof(rectVertices[0]),
-		rectIndices, sizeof(rectIndices) / sizeof(rectIndices[0]), rectColorTint, rectOffset, device, context);
+		rectIndices, sizeof(rectIndices) / sizeof(rectIndices[0]), rectColorTint, device, context);
 
 	// Create Pentagon Mesh
 	Vertex pentagonVertices[] =
@@ -197,10 +203,9 @@ void Game::CreateBasicGeometry()
 	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 3, 4, 4, 5, 0, 0, 5, 1 };
 
 	XMFLOAT4 pentagonColorTint = XMFLOAT4(0.0f, 0.25f, 1.0f, 1.0f);
-	XMFLOAT3 pentagonOffset = XMFLOAT3(0.0f, 0.25f, 0.0f);
 
 	pentagon = std::make_shared<Mesh>(pentagonVertices, sizeof(pentagonVertices) / sizeof(pentagonVertices[0]),
-		pentagonIndices, sizeof(pentagonIndices) / sizeof(pentagonIndices[0]), pentagonColorTint, pentagonOffset, device, context);
+		pentagonIndices, sizeof(pentagonIndices) / sizeof(pentagonIndices[0]), pentagonColorTint, device, context);
 }
 
 
@@ -222,6 +227,12 @@ void Game::Update(float deltaTime, float totalTime)
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
+
+	ge1->GetTransform()->MoveAbsolute(0.1 * deltaTime, 0.1 * deltaTime, 0);
+	ge2->GetTransform()->Rotate(0, 0, 0.1 * deltaTime);
+	ge3->GetTransform()->Scale(0.1 * deltaTime, 0.1 * deltaTime, 0);
+	ge4->GetTransform()->MoveAbsolute(-0.1 * deltaTime, 0.1 * deltaTime, 0);
+	ge5->GetTransform()->MoveAbsolute(0.1 * deltaTime, -0.1 * deltaTime, 0);
 }
 
 // --------------------------------------------------------
@@ -258,10 +269,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - However, this isn't always the case (but might be for this course)
 	context->IASetInputLayout(inputLayout.Get());
 
-	// Draw the meshes
-	triangle->Draw();
-	rect->Draw();
-	pentagon->Draw();
+	// Draw the entity
+	ge1->Draw();
+	ge2->Draw();
+	ge3->Draw();
+	ge4->Draw();
+	ge5->Draw();
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

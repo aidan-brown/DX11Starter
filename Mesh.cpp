@@ -1,14 +1,14 @@
 #include "Mesh.h"
+#include <stdio.h>
 
 // For the DirectX Math library
 using namespace DirectX;
 
-Mesh::Mesh(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, DirectX::XMFLOAT4 colorTint, DirectX::XMFLOAT3 offset, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context) {
+Mesh::Mesh(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, DirectX::XMFLOAT4 colorTint, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context) {
 	Mesh::context = context;
 	Mesh::indexCount = indexCount;
 	Mesh::vsData = {};
 	Mesh::vsData.colorTint = colorTint;
-	Mesh::vsData.offset = offset;
 
 	// Create the VERTEX BUFFER description -----------------------------------
 	// - The description is created on the stack because we only need
@@ -79,8 +79,8 @@ int Mesh::GetIndexCount() {
 	return Mesh::indexCount;
 }
 
-void Mesh::Draw() {
-
+void Mesh::Draw(Transform transform) {
+	Mesh::vsData.worldMatrix = transform.GetWorldMatrix();
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 	context->Map(Mesh::constantBufferVS.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
 	memcpy(mappedBuffer.pData, &(Mesh::vsData), sizeof(Mesh::vsData));
