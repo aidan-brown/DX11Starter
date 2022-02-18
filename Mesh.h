@@ -6,6 +6,7 @@
 #include "BufferStructs.h"
 #include <DirectXMath.h>
 #include "Transform.h"
+#include "Camera.h"
 
 class Mesh {
 
@@ -16,7 +17,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer();
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer();
 	int GetIndexCount();
-	void Draw(Transform transform);
+	void Draw(Transform transform, Camera* camera);
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer, indexBuffer, constantBufferVS;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;

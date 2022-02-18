@@ -79,8 +79,10 @@ int Mesh::GetIndexCount() {
 	return Mesh::indexCount;
 }
 
-void Mesh::Draw(Transform transform) {
+void Mesh::Draw(Transform transform, Camera* camera) {
 	Mesh::vsData.worldMatrix = transform.GetWorldMatrix();
+	Mesh::vsData.viewMatrix = camera->GetViewMatrix();
+	Mesh::vsData.projectionMatrix = camera->GetProjectionMatrix();
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 	context->Map(Mesh::constantBufferVS.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
 	memcpy(mappedBuffer.pData, &(Mesh::vsData), sizeof(Mesh::vsData));

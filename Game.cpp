@@ -29,6 +29,7 @@ Game::Game(HINSTANCE hInstance)
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
+	camera = new Camera((float)this->width / this->height, DirectX::XMFLOAT3(0, 0, 0));
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
 }
@@ -44,9 +45,12 @@ Game::~Game()
 	// we don't need to explicitly clean up those DirectX objects
 	// - If we weren't using smart pointers, we'd need
 	//   to call Release() on each DirectX object created in Game
+	delete(camera);
 	delete(ge1);
 	delete(ge2);
 	delete(ge3);
+	delete(ge4);
+	delete(ge5);
 }
 
 // --------------------------------------------------------
@@ -215,6 +219,7 @@ void Game::CreateBasicGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
+	camera->UpdateProjectionMatrix((float)this->width / this->height);
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 }
@@ -227,6 +232,8 @@ void Game::Update(float deltaTime, float totalTime)
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
+
+	camera->Update(deltaTime);
 
 	ge1->GetTransform()->MoveAbsolute(0.1 * deltaTime, 0.1 * deltaTime, 0);
 	ge2->GetTransform()->Rotate(0, 0, 0.1 * deltaTime);
@@ -270,11 +277,11 @@ void Game::Draw(float deltaTime, float totalTime)
 	context->IASetInputLayout(inputLayout.Get());
 
 	// Draw the entity
-	ge1->Draw();
-	ge2->Draw();
-	ge3->Draw();
-	ge4->Draw();
-	ge5->Draw();
+	ge1->Draw(camera);
+	ge2->Draw(camera);
+	ge3->Draw(camera);
+	ge4->Draw(camera);
+	ge5->Draw(camera);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

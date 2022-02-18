@@ -1,4 +1,5 @@
 #include "Transform.h"
+#include <algorithm>
 
 Transform::Transform()
 {
@@ -74,8 +75,17 @@ void Transform::MoveAbsolute(float x, float y, float z)
 	Transform::position = DirectX::XMFLOAT3(Transform::position.x + x, Transform::position.y + y, Transform::position.z + z);
 }
 
-void Transform::Rotate(float pitch, float yaw, float roll)
+void Transform::MoveRelative(float x, float y, float z)
 {
+	DirectX::XMVECTOR direction = DirectX::XMVectorSet(x, y, z, 1.0f);
+	DirectX::XMVECTOR rotation = DirectX::XMQuaternionRotationRollPitchYaw(Transform::rotation.x, Transform::rotation.y, Transform::rotation.z);
+	DirectX::XMVECTOR rotatedDirection = DirectX::XMVector3Rotate(direction, rotation);
+	rotatedDirection = DirectX::XMVectorAdd(rotatedDirection, DirectX::XMLoadFloat3(&(Transform::position)));
+	DirectX::XMStoreFloat3(&(Transform::position), rotatedDirection);
+}
+
+void Transform::Rotate(float pitch, float yaw, float roll)
+{	
 	Transform::rotation = DirectX::XMFLOAT4(Transform::rotation.x + pitch, Transform::rotation.y + yaw, Transform::rotation.z + roll, 1);
 }
 
@@ -99,6 +109,36 @@ DirectX::XMFLOAT3 Transform::GetScale()
 	return scale;
 }
 
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	DirectX::XMVECTOR worldRight = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f);
+	DirectX::XMVECTOR rotation = DirectX::XMQuaternionRotationRollPitchYaw(Transform::rotation.x, Transform::rotation.y, Transform::rotation.z);
+	DirectX::XMVECTOR localRight = DirectX::XMVector3Rotate(worldRight, rotation);
+	DirectX::XMFLOAT3 localRightFloat3;
+	DirectX::XMStoreFloat3(&localRightFloat3, localRight);
+	return localRightFloat3;
+}
+
+DirectX::XMFLOAT3 Transform::GetUp()
+{
+	DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
+	DirectX::XMVECTOR rotation = DirectX::XMQuaternionRotationRollPitchYaw(Transform::rotation.x, Transform::rotation.y, Transform::rotation.z);
+	DirectX::XMVECTOR localUp = DirectX::XMVector3Rotate(worldUp, rotation);
+	DirectX::XMFLOAT3 localUpFloat3;
+	DirectX::XMStoreFloat3(&localUpFloat3, localUp);
+	return localUpFloat3;
+}
+
+DirectX::XMFLOAT3 Transform::GetForward()
+{
+	DirectX::XMVECTOR worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f);
+	DirectX::XMVECTOR rotation = DirectX::XMQuaternionRotationRollPitchYaw(Transform::rotation.x, Transform::rotation.y, Transform::rotation.z);
+	DirectX::XMVECTOR localForward = DirectX::XMVector3Rotate(worldForward, rotation);
+	DirectX::XMFLOAT3 localForwardFloat3;
+	DirectX::XMStoreFloat3(&localForwardFloat3, localForward);
+	return localForwardFloat3;
+}
+
 DirectX::XMFLOAT4X4 Transform::GetWorldMatrix()
 {
 	Transform::UpdateMatrices();
@@ -120,4 +160,11 @@ void Transform::UpdateMatrices()
 
 	DirectX::XMStoreFloat4x4(&worldMatrix, world);
 	DirectX::XMStoreFloat4x4(&worldInverseTransposeMatrix, DirectX::XMMatrixInverse(0, DirectX::XMMatrixTranspose(world)));
+}
+
+void Transform::ClampPitch(float min, float max) 
+{
+	float pitch = Transform::rotation.x;
+	pitch = std::max(min, std::min(pitch, max));
+	Transform::rotation.x = pitch;
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Transform.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 class GameEntity {
 public:
@@ -10,7 +11,7 @@ public:
 	Mesh* GetMesh();
 	Transform* GetTransform();
 
-	void Draw();
+	void Draw(Camera* camera);
 
 private:
 	Transform transform;

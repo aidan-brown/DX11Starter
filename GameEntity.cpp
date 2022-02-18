@@ -20,7 +20,7 @@ Transform* GameEntity::GetTransform()
 	return &(GameEntity::transform);
 }
 
-void GameEntity::Draw()
+void GameEntity::Draw(Camera* camera)
 {
-	GameEntity::mesh->Draw(GameEntity::transform);
+	GameEntity::mesh->Draw(GameEntity::transform, camera);
 }
