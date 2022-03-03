@@ -26,10 +26,10 @@ Game::Game(HINSTANCE hInstance)
 		true),			   // Show extra stats (fps) in title bar?
 	vsync(false)
 {
+	camera = std::make_shared<Camera>((float)this->width / this->height, DirectX::XMFLOAT3(0, 0, -1));
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
-	camera = new Camera((float)this->width / this->height, DirectX::XMFLOAT3(0, 0, 0));
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
 }
@@ -45,12 +45,7 @@ Game::~Game()
 	// we don't need to explicitly clean up those DirectX objects
 	// - If we weren't using smart pointers, we'd need
 	//   to call Release() on each DirectX object created in Game
-	delete(camera);
-	delete(ge1);
-	delete(ge2);
-	delete(ge3);
-	delete(ge4);
-	delete(ge5);
+	
 }
 
 // --------------------------------------------------------
@@ -64,13 +59,20 @@ void Game::Init()
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
-	CreateBasicGeometry();
+	LoadMeshes();
 
-	ge1 = new GameEntity(triangle.get());
-	ge2 = new GameEntity(pentagon.get());
-	ge3 = new GameEntity(rect.get());
-	ge4 = new GameEntity(triangle.get());
-	ge5 = new GameEntity(triangle.get());
+	matWhite = std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), vertexShader, customPixelShader);
+	matRed = std::make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), vertexShader, pixelShader);
+	matGreen = std::make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), vertexShader, pixelShader);
+	matBlue = std::make_shared<Material>(DirectX::XMFLOAT4(0, 0, 1, 1), vertexShader, pixelShader);
+
+	geCube = std::make_shared<GameEntity>(cube.get(), matWhite, DirectX::XMFLOAT3(7.5f, 0.0f, 0.0f));
+	geCylinder = std::make_shared<GameEntity>(cylinder.get(), matWhite, DirectX::XMFLOAT3(5.0f, 0.0f, 0.0f));
+	geHelix = std::make_shared<GameEntity>(helix.get(), matWhite, DirectX::XMFLOAT3(2.5f, 0.0f, 0.0f));
+	geQuad = std::make_shared<GameEntity>(quad.get(), matWhite, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+	geQuadDoubleSided = std::make_shared<GameEntity>(quadDoubleSided.get(), matWhite, DirectX::XMFLOAT3(-2.5f, 0.0f, 0.0f));
+	geSphere = std::make_shared<GameEntity>(sphere.get(), matWhite, DirectX::XMFLOAT3(-5.0f, 0.0f, 0.0f));
+	geTorus = std::make_shared<GameEntity>(torus.get(), matWhite, DirectX::XMFLOAT3(-7.5f, 0.0f, 0.0f));
 	
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -88,128 +90,21 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	// Blob for reading raw data
-	// - This is a simplified way of handling raw data
-	ID3DBlob* shaderBlob;
-
-	// Read our compiled vertex shader code into a blob
-	// - Essentially just "open the file and plop its contents here"
-	D3DReadFileToBlob(
-		GetFullPathTo_Wide(L"VertexShader.cso").c_str(), // Using a custom helper for file paths
-		&shaderBlob);
-
-	// Create a vertex shader from the information we
-	// have read into the blob above
-	// - A blob can give a pointer to its contents, and knows its own size
-	device->CreateVertexShader(
-		shaderBlob->GetBufferPointer(), // Get a pointer to the blob's contents
-		shaderBlob->GetBufferSize(),	// How big is that data?
-		0,								// No classes in this shader
-		vertexShader.GetAddressOf());	// The address of the ID3D11VertexShader*
-
-
-	// Create an input layout that describes the vertex format
-	// used by the vertex shader we're using
-	//  - This is used by the pipeline to know how to interpret the raw data
-	//     sitting inside a vertex buffer
-	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
-	//  - Luckily, we already have that loaded (the blob above)
-	D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
-
-	// Set up the first element - a position, which is 3 float values
-	inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
-	inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
-	inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
-
-	// Set up the second element - a color, which is 4 more float values
-	inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			// 4x 32-bit floats
-	inputElements[1].SemanticName = "COLOR";							// Match our vertex shader input!
-	inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
-
-	// Create the input layout, verifying our description against actual shader code
-	device->CreateInputLayout(
-		inputElements,					// An array of descriptions
-		2,								// How many elements in that array
-		shaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
-		shaderBlob->GetBufferSize(),	// Size of the shader code that uses this layout
-		inputLayout.GetAddressOf());	// Address of the resulting ID3D11InputLayout*
-
-
-
-	// Read and create the pixel shader
-	//  - Reusing the same blob here, since we're done with the vert shader code
-	D3DReadFileToBlob(
-		GetFullPathTo_Wide(L"PixelShader.cso").c_str(), // Using a custom helper for file paths
-		&shaderBlob);
-
-	device->CreatePixelShader(
-		shaderBlob->GetBufferPointer(),
-		shaderBlob->GetBufferSize(),
-		0,
-		pixelShader.GetAddressOf());
+	vertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"VertexShader.cso").c_str());
+	pixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShader.cso").c_str());
+	customPixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"CustomPixelShader.cso").c_str());
 }
 
 
-
-// --------------------------------------------------------
-// Creates the geometry we're going to draw - a single triangle for now
-// --------------------------------------------------------
-void Game::CreateBasicGeometry()
+void Game::LoadMeshes()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-
-	// Create Triangle Mesh
-	Vertex triangleVertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.25f, +0.0f), red },
-		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), blue },
-		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), green },
-	};
-
-	unsigned int triangleIndices[] = { 0, 1, 2 };
-
-	XMFLOAT4 triangleColorTint = XMFLOAT4(0.25f, 1.0f, 0.25f, 1.0f);
-
-	triangle = std::make_shared<Mesh>(triangleVertices, sizeof(triangleVertices) / sizeof(triangleVertices[0]),
-		triangleIndices, sizeof(triangleIndices) / sizeof(triangleIndices[0]), triangleColorTint, device, context);
-
-	// Create Rect Mesh
-	Vertex rectVertices[] =
-	{
-		{ XMFLOAT3(-0.75f, -0.25f, +0.0f), red },
-		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), blue },
-		{ XMFLOAT3(-0.75f, -0.75f, +0.0f), red },
-		{ XMFLOAT3(-0.25f, -0.75f, +0.0f), blue },
-	};
-
-	unsigned int rectIndices[] = { 0, 1, 2, 2, 1, 3 };
-
-	XMFLOAT4 rectColorTint = XMFLOAT4(1.0f, 0.0f, 0.25f, 1.0f);
-
-	rect = std::make_shared<Mesh>(rectVertices, sizeof(rectVertices) / sizeof(rectVertices[0]),
-		rectIndices, sizeof(rectIndices) / sizeof(rectIndices[0]), rectColorTint, device, context);
-
-	// Create Pentagon Mesh
-	Vertex pentagonVertices[] =
-	{
-		{ XMFLOAT3(+0.50f, -0.50f, +0.0f), blue },
-		{ XMFLOAT3(+0.50f, -0.25f, +0.0f), green },
-		{ XMFLOAT3(+0.74f, -0.42f, +0.0f), green },
-		{ XMFLOAT3(+0.65f, -0.70f, +0.0f), green },
-		{ XMFLOAT3(+0.35f, -0.70f, +0.0f), green },
-		{ XMFLOAT3(+0.26f, -0.42f, +0.0f), green },
-	};
-
-	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 3, 4, 4, 5, 0, 0, 5, 1 };
-
-	XMFLOAT4 pentagonColorTint = XMFLOAT4(0.0f, 0.25f, 1.0f, 1.0f);
-
-	pentagon = std::make_shared<Mesh>(pentagonVertices, sizeof(pentagonVertices) / sizeof(pentagonVertices[0]),
-		pentagonIndices, sizeof(pentagonIndices) / sizeof(pentagonIndices[0]), pentagonColorTint, device, context);
+	cube = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/cube.obj").c_str(), device, context);
+	cylinder = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/cylinder.obj").c_str(), device, context);
+	helix = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/helix.obj").c_str(), device, context);
+	quad = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/quad.obj").c_str(), device, context);
+	quadDoubleSided = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/quad_double_sided.obj").c_str(), device, context);
+	sphere = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/sphere.obj").c_str(), device, context);
+	torus = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/torus.obj").c_str(), device, context);
 }
 
 
@@ -235,11 +130,13 @@ void Game::Update(float deltaTime, float totalTime)
 
 	camera->Update(deltaTime);
 
-	ge1->GetTransform()->MoveAbsolute(0.1 * deltaTime, 0.1 * deltaTime, 0);
-	ge2->GetTransform()->Rotate(0, 0, 0.1 * deltaTime);
-	ge3->GetTransform()->Scale(0.1 * deltaTime, 0.1 * deltaTime, 0);
-	ge4->GetTransform()->MoveAbsolute(-0.1 * deltaTime, 0.1 * deltaTime, 0);
-	ge5->GetTransform()->MoveAbsolute(0.1 * deltaTime, -0.1 * deltaTime, 0);
+	geCube->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
+	geCylinder->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
+	geHelix->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
+	geQuad->GetTransform()->Rotate(-0.1 * deltaTime, 0, 0);
+	geQuadDoubleSided->GetTransform()->Rotate(-0.1 * deltaTime, 0, 0);
+	geSphere->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
+	geTorus->GetTransform()->Rotate(-0.1 * deltaTime, 0, 0);
 }
 
 // --------------------------------------------------------
@@ -261,14 +158,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		0);
 
 
-	// Set the vertex and pixel shaders to use for the next Draw() command
-	//  - These don't technically need to be set every frame
-	//  - Once you start applying different shaders to different objects,
-	//    you'll need to swap the current shaders before each draw
-	context->VSSetShader(vertexShader.Get(), 0, 0);
-	context->PSSetShader(pixelShader.Get(), 0, 0);
-
-
 	// Ensure the pipeline knows how to interpret the data (numbers)
 	// from the vertex buffer.  
 	// - If all of your 3D models use the exact same vertex layout,
@@ -277,11 +166,13 @@ void Game::Draw(float deltaTime, float totalTime)
 	context->IASetInputLayout(inputLayout.Get());
 
 	// Draw the entity
-	ge1->Draw(camera);
-	ge2->Draw(camera);
-	ge3->Draw(camera);
-	ge4->Draw(camera);
-	ge5->Draw(camera);
+	geCube->Draw(camera);
+	geCylinder->Draw(camera);
+	geHelix->Draw(camera);
+	geQuad->Draw(camera);
+	geQuadDoubleSided->Draw(camera);
+	geSphere->Draw(camera);
+	geTorus->Draw(camera);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

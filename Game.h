@@ -8,6 +8,8 @@
 #include "BufferStructs.h"
 #include "GameEntity.h"
 #include "Camera.h"
+#include "SimpleShader.h"
+#include "Material.h"
 
 class Game 
 	: public DXCore
@@ -31,7 +33,7 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
-	void CreateBasicGeometry();
+	void LoadMeshes();
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -39,17 +41,14 @@ private:
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 	
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
+	std::shared_ptr<SimplePixelShader> pixelShader, customPixelShader;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBufferVS;
 
-	std::shared_ptr<Mesh> triangle, rect, pentagon;
-	GameEntity* ge1;
-	GameEntity* ge2;
-	GameEntity* ge3;
-	GameEntity* ge4;
-	GameEntity* ge5;
-	Camera* camera;
+	std::shared_ptr<Mesh> cube, cylinder, helix, quad, quadDoubleSided, sphere, torus;
+	std::shared_ptr<Material> matWhite, matRed, matGreen, matBlue;
+	std::shared_ptr<GameEntity> geCube, geCylinder, geHelix, geQuad, geQuadDoubleSided, geSphere, geTorus;
+	std::shared_ptr<Camera> camera;
 };
 
