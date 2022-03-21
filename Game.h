@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "SimpleShader.h"
 #include "Material.h"
+#include "Lights.h"
 
 class Game 
 	: public DXCore
@@ -48,7 +49,10 @@ private:
 
 	std::shared_ptr<Mesh> cube, cylinder, helix, quad, quadDoubleSided, sphere, torus;
 	std::shared_ptr<Material> matWhite, matRed, matGreen, matBlue;
-	std::shared_ptr<GameEntity> geCube, geCylinder, geHelix, geQuad, geQuadDoubleSided, geSphere, geTorus;
+	std::vector<std::shared_ptr<GameEntity>> gameEntities;
 	std::shared_ptr<Camera> camera;
+
+	DirectX::XMFLOAT3 ambientColor;
+	std::vector<Light> lights;
 };
 

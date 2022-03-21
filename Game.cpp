@@ -61,18 +61,76 @@ void Game::Init()
 	LoadShaders();
 	LoadMeshes();
 
-	matWhite = std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), vertexShader, customPixelShader);
-	matRed = std::make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), vertexShader, pixelShader);
-	matGreen = std::make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), vertexShader, pixelShader);
-	matBlue = std::make_shared<Material>(DirectX::XMFLOAT4(0, 0, 1, 1), vertexShader, pixelShader);
+	lights = std::vector<Light>();
+	Light dl1 = { 
+		LIGHT_TYPE_DIRECTIONAL,				//Type
+		DirectX::XMFLOAT3(1.0, 0, 0),		//Direction
+		0,									//Range
+		DirectX::XMFLOAT3(0, 0, 0),			//Position
+		1,									//Intensity
+		DirectX::XMFLOAT3(1.0, 0, 0),		//Color
+		0,									//SpotFalloff
+		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+	};
+	Light dl2 = {
+		LIGHT_TYPE_DIRECTIONAL,				//Type
+		DirectX::XMFLOAT3(0, -1.0, 0),		//Direction
+		0,									//Range
+		DirectX::XMFLOAT3(0, 0, 0),			//Position
+		1,									//Intensity
+		DirectX::XMFLOAT3(0, 1.0, 0),		//Color
+		0,									//SpotFalloff
+		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+	};
+	Light dl3 = {
+		LIGHT_TYPE_DIRECTIONAL,				//Type
+		DirectX::XMFLOAT3(-1.0, 0, 0),		//Direction
+		0,									//Range
+		DirectX::XMFLOAT3(0, 0, 0),			//Position
+		1,									//Intensity
+		DirectX::XMFLOAT3(0, 0, 1.0),		//Color
+		0,									//SpotFalloff
+		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+	};
+	Light pl1 = {
+		LIGHT_TYPE_POINT,					//Type
+		DirectX::XMFLOAT3(0, 0, 0),			//Direction
+		5.0,								//Range
+		DirectX::XMFLOAT3(5.5, 0, -2),		//Position
+		1,									//Intensity
+		DirectX::XMFLOAT3(0.5, 0, 0.5),		//Color
+		0,									//SpotFalloff
+		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+	};
+	Light pl2 = {
+		LIGHT_TYPE_POINT,					//Type
+		DirectX::XMFLOAT3(0, 0, 0),			//Direction
+		5.0,								//Range
+		DirectX::XMFLOAT3(-5.5, 0, -2),		//Position
+		1,									//Intensity
+		DirectX::XMFLOAT3(0.5, 0, 0.5),		//Color
+		0,									//SpotFalloff
+		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+	};
+	lights.push_back(dl1);
+	lights.push_back(dl2);
+	lights.push_back(dl3);
+	lights.push_back(pl1);
+	lights.push_back(pl2);
 
-	geCube = std::make_shared<GameEntity>(cube.get(), matWhite, DirectX::XMFLOAT3(7.5f, 0.0f, 0.0f));
-	geCylinder = std::make_shared<GameEntity>(cylinder.get(), matWhite, DirectX::XMFLOAT3(5.0f, 0.0f, 0.0f));
-	geHelix = std::make_shared<GameEntity>(helix.get(), matWhite, DirectX::XMFLOAT3(2.5f, 0.0f, 0.0f));
-	geQuad = std::make_shared<GameEntity>(quad.get(), matWhite, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
-	geQuadDoubleSided = std::make_shared<GameEntity>(quadDoubleSided.get(), matWhite, DirectX::XMFLOAT3(-2.5f, 0.0f, 0.0f));
-	geSphere = std::make_shared<GameEntity>(sphere.get(), matWhite, DirectX::XMFLOAT3(-5.0f, 0.0f, 0.0f));
-	geTorus = std::make_shared<GameEntity>(torus.get(), matWhite, DirectX::XMFLOAT3(-7.5f, 0.0f, 0.0f));
+	matWhite = std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
+	matRed = std::make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), 1, vertexShader, pixelShader);
+	matGreen = std::make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), 0.1, vertexShader, pixelShader);
+	matBlue = std::make_shared<Material>(DirectX::XMFLOAT4(0, 0, 1, 1), 0.75, vertexShader, pixelShader);
+
+	gameEntities = std::vector<std::shared_ptr<GameEntity>>();
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cube.get(), matWhite, DirectX::XMFLOAT3(7.5f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cylinder.get(), matWhite, DirectX::XMFLOAT3(5.0f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(helix.get(), matWhite, DirectX::XMFLOAT3(2.5f, -1.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quad.get(), matWhite, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quadDoubleSided.get(), matWhite, DirectX::XMFLOAT3(-2.5f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(sphere.get(), matWhite, DirectX::XMFLOAT3(-5.0f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(torus.get(), matWhite, DirectX::XMFLOAT3(-7.5f, 0.0f, 0.0f))));
 	
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -90,6 +148,7 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
+	ambientColor = DirectX::XMFLOAT3(0.1f, 0.3f, 0.45f);
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShader.cso").c_str());
 	customPixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"CustomPixelShader.cso").c_str());
@@ -130,13 +189,10 @@ void Game::Update(float deltaTime, float totalTime)
 
 	camera->Update(deltaTime);
 
-	geCube->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
-	geCylinder->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
-	geHelix->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
-	geQuad->GetTransform()->Rotate(-0.1 * deltaTime, 0, 0);
-	geQuadDoubleSided->GetTransform()->Rotate(-0.1 * deltaTime, 0, 0);
-	geSphere->GetTransform()->Rotate(0, 0.1 * deltaTime, 0);
-	geTorus->GetTransform()->Rotate(-0.1 * deltaTime, 0, 0);
+	for (std::shared_ptr<GameEntity> ge : gameEntities)
+	{
+		ge->GetTransform()->Rotate(-0.25 * deltaTime, -0.25 * deltaTime, 0);
+	}
 }
 
 // --------------------------------------------------------
@@ -166,13 +222,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	context->IASetInputLayout(inputLayout.Get());
 
 	// Draw the entity
-	geCube->Draw(camera);
-	geCylinder->Draw(camera);
-	geHelix->Draw(camera);
-	geQuad->Draw(camera);
-	geQuadDoubleSided->Draw(camera);
-	geSphere->Draw(camera);
-	geTorus->Draw(camera);
+	for (std::shared_ptr<GameEntity> ge : gameEntities)
+	{
+		ge->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
+		ge->GetMaterial()->GetPixelShader()->SetData("lights", &lights[0], (sizeof(Light) * (int)lights.size()));
+		ge->Draw(camera);
+	}
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

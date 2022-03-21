@@ -1,41 +1,10 @@
-
-// Struct representing a single vertex worth of data
-// - This should match the vertex definition in our C++ code
-// - By "match", I mean the size, order and number of members
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexShaderInput
-{ 
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float3 position			: POSITION;     // XYZ position
-	float3 normal			: NORMAL;
-	float3 uv				: TEXCOORD;
-};
-
-// Struct representing the data we're sending down the pipeline
-// - Should match our pixel shader's input (hence the name: Vertex to Pixel)
-// - At a minimum, we need a piece of data defined tagged as SV_POSITION
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float2 uv				: TEXCOORD;
-};
+#include "ShaderIncludes.hlsli"
 
 cbuffer ExternalData : register(b0) {
 	matrix worldMatrix;
 	matrix viewMatrix;
 	matrix projectionMatrix;
+	matrix worldInvTranspose;
 }
 
 // --------------------------------------------------------
@@ -59,7 +28,10 @@ VertexToPixel main( VertexShaderInput input )
 	//   which we're leaving at 1.0 for now (this is more useful when dealing with 
 	//   a perspective projection matrix, which we'll get to in the future).
 	matrix wvp = mul(projectionMatrix, mul(viewMatrix, worldMatrix));
-	output.screenPosition = mul(wvp, float4(input.position, 1.0f));
+	output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
+
+	output.normal = mul((float3x3)worldInvTranspose, input.normal);
+	output.worldPosition = mul(worldMatrix, float4(input.localPosition, 1)).xyz;
 
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer

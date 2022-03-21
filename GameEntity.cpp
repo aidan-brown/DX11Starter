@@ -46,8 +46,11 @@ void GameEntity::Draw(std::shared_ptr<Camera> camera)
 	vs->SetMatrix4x4("worldMatrix", GameEntity::transform.GetWorldMatrix());
 	vs->SetMatrix4x4("viewMatrix", camera->GetViewMatrix());
 	vs->SetMatrix4x4("projectionMatrix", camera->GetProjectionMatrix());
+	vs->SetMatrix4x4("worldInvTranspose", GameEntity::transform.GetWorldInverseTransposeMatrix());
 
 	ps->SetFloat4("colorTint", GameEntity::material->GetColorTint());
+	ps->SetFloat("roughness", GameEntity::material->GetRoughness());
+	ps->SetFloat3("cameraPosition", camera->GetTransform().GetPosition());
 
 	vs->CopyAllBufferData();
 	ps->CopyAllBufferData();

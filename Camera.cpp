@@ -25,6 +25,11 @@ Camera::Camera(float aspectRatio, DirectX::XMFLOAT3 position, float fov, float n
 	Camera::UpdateProjectionMatrix(aspectRatio);
 }
 
+Transform Camera::GetTransform()
+{
+	return Camera::transform;
+}
+
 DirectX::XMFLOAT4X4 Camera::GetViewMatrix()
 {
 	return Camera::viewMatrix;

@@ -1,22 +1,22 @@
+#include "ShaderIncludes.hlsli"
 
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
+float3 Diffuse(float3 normal, float3 dirToLight) {
+	return saturate(dot(normal, dirToLight));
+}
+
+float Attenuate(Light light, float3 worldPos)
 {
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float2 uv				: TEXCOORD;
-};
+	float dist = distance(light.Position, worldPos);
+	float att = saturate(1.0f - (dist * dist / (light.Range * light.Range)));
+	return att * att;
+}
 
 cbuffer ExternalData : register(b0) {
 	float4 colorTint;
+	float roughness;
+	float3 cameraPosition;
+	float3 ambient;
+	Light lights[5];
 }
 
 // --------------------------------------------------------
@@ -30,9 +30,28 @@ cbuffer ExternalData : register(b0) {
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-	return colorTint;
+	input.normal = normalize(input.normal);
+
+	float3 V = normalize(cameraPosition - input.worldPosition);
+	float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+	float3 finalColor = (ambient * colorTint);
+	for (int i = 0; i < 5; i++) {
+		Light light = lights[i];
+		float3 dirFromLight = (0, 1, 0);
+		float attenuate = 1;
+		if (light.Type == LIGHT_TYPE_DIRECTIONAL) {
+			dirFromLight = normalize(light.Direction);
+		}
+		else {
+			dirFromLight = normalize(input.worldPosition - light.Position);
+			attenuate = Attenuate(light, input.worldPosition);
+		}
+		float3 R = reflect(dirFromLight, input.normal);
+		float spec = pow(saturate(dot(R, V)), specExponent);
+		float3 dirToLight = -dirFromLight;
+		float3 diffuse = Diffuse(input.normal, dirToLight);
+		finalColor += ((diffuse + spec) * light.Color * colorTint * attenuate);
+	}
+
+	return float4(finalColor, 1);
 }
