@@ -1,0 +1,1 @@
+For Assignment 8: I added both a specular map and a roughness map to my shader

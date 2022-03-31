@@ -5,13 +5,13 @@
 using namespace DirectX;
 
 Mesh::Mesh(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context) {
-	Mesh::context = context;
-	Mesh::CreateBuffers(vertices, vertexCount, indices, indexCount, device);
+	this->context = context;
+	this->CreateBuffers(vertices, vertexCount, indices, indexCount, device);
 }
 
 Mesh::Mesh(const char* filename, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 {
-	Mesh::context = context;
+	this->context = context;
 	std::ifstream obj(filename);
 
 	// Check for successful open
@@ -203,7 +203,7 @@ Mesh::Mesh(const char* filename, Microsoft::WRL::ComPtr<ID3D11Device> device, Mi
 	// Close the file and create the actual buffers
 	obj.close();
 
-	Mesh::CreateBuffers(&verts[0], verts.size(), &indices[0], indices.size(), device);
+	this->CreateBuffers(&verts[0], verts.size(), &indices[0], indices.size(), device);
 }
 
 Mesh::~Mesh() {
@@ -211,15 +211,15 @@ Mesh::~Mesh() {
 }
 
 Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetVertexBuffer() {
-	return Mesh::vertexBuffer;
+	return this->vertexBuffer;
 }
 
 Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetIndexBuffer() {
-	return Mesh::indexBuffer;
+	return this->indexBuffer;
 }
 
 int Mesh::GetIndexCount() {
-	return Mesh::indexCount;
+	return this->indexCount;
 }
 
 void Mesh::Draw(Transform transform, std::shared_ptr<Camera> camera) {
@@ -232,8 +232,8 @@ void Mesh::Draw(Transform transform, std::shared_ptr<Camera> camera) {
 	//    in a larger application/game
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	context->IASetVertexBuffers(0, 1, Mesh::vertexBuffer.GetAddressOf(), &stride, &offset);
-	context->IASetIndexBuffer(Mesh::indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	context->IASetVertexBuffers(0, 1, this->vertexBuffer.GetAddressOf(), &stride, &offset);
+	context->IASetIndexBuffer(this->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 
 	// Finally do the actual drawing
@@ -242,14 +242,14 @@ void Mesh::Draw(Transform transform, std::shared_ptr<Camera> camera) {
 	//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
 	//     vertices in the currently set VERTEX BUFFER
 	context->DrawIndexed(
-		Mesh::indexCount,     // The number of indices to use (we could draw a subset if we wanted)
+		this->indexCount,     // The number of indices to use (we could draw a subset if we wanted)
 		0,     // Offset to the first index we want to use
 		0);    // Offset to add to each index when looking up vertices
 }
 
 void Mesh::CreateBuffers(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, Microsoft::WRL::ComPtr<ID3D11Device> device)
 {
-	Mesh::indexCount = indexCount;
+	this->indexCount = indexCount;
 
 	// Create the VERTEX BUFFER description -----------------------------------
 	// - The description is created on the stack because we only need
@@ -269,7 +269,7 @@ void Mesh::CreateBuffers(Vertex* vertices, int vertexCount, unsigned int* indice
 
 	// Actually create the buffer with the initial data
 	// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-	device->CreateBuffer(&vbd, &initialVertexData, Mesh::vertexBuffer.GetAddressOf());
+	device->CreateBuffer(&vbd, &initialVertexData, this->vertexBuffer.GetAddressOf());
 
 	// Create the INDEX BUFFER description ------------------------------------
 	// - The description is created on the stack because we only need
@@ -289,7 +289,7 @@ void Mesh::CreateBuffers(Vertex* vertices, int vertexCount, unsigned int* indice
 
 	// Actually create the buffer with the initial data
 	// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-	device->CreateBuffer(&ibd, &initialIndexData, Mesh::indexBuffer.GetAddressOf());
+	device->CreateBuffer(&ibd, &initialIndexData, this->indexBuffer.GetAddressOf());
 
 	// Get size as the next multiple of 16 (instead of hardcoding a size here!)  
 	unsigned int size = sizeof(VertexShaderExternalData);
@@ -301,5 +301,5 @@ void Mesh::CreateBuffers(Vertex* vertices, int vertexCount, unsigned int* indice
 	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
 
-	device->CreateBuffer(&cbDesc, 0, Mesh::constantBufferVS.GetAddressOf());
+	device->CreateBuffer(&cbDesc, 0, this->constantBufferVS.GetAddressOf());
 }

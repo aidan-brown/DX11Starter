@@ -1,5 +1,10 @@
 #include "ShaderIncludes.hlsli"
 
+Texture2D DiffuseMap : register(t0);
+Texture2D SpecularMap : register(t1);
+Texture2D RoughMap : register(t2);
+SamplerState BasicSampler : register(s0);
+
 float3 Diffuse(float3 normal, float3 dirToLight) {
 	return saturate(dot(normal, dirToLight));
 }
@@ -32,9 +37,12 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
 
+	float3 surfaceColor = DiffuseMap.Sample(BasicSampler, input.uv).rgb;
+	surfaceColor *= colorTint;
 	float3 V = normalize(cameraPosition - input.worldPosition);
-	float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
-	float3 finalColor = (ambient * colorTint);
+	float specExponent = (1.0f - RoughMap.Sample(BasicSampler, input.uv).r) * MAX_SPECULAR_EXPONENT;
+	float specSample = SpecularMap.Sample(BasicSampler, input.uv).r;
+	float3 finalColor = (ambient * surfaceColor);
 	for (int i = 0; i < 5; i++) {
 		Light light = lights[i];
 		float3 dirFromLight = (0, 1, 0);
@@ -47,10 +55,10 @@ float4 main(VertexToPixel input) : SV_TARGET
 			attenuate = Attenuate(light, input.worldPosition);
 		}
 		float3 R = reflect(dirFromLight, input.normal);
-		float spec = pow(saturate(dot(R, V)), specExponent);
+		float spec = specSample * pow(saturate(dot(R, V)), specExponent);
 		float3 dirToLight = -dirFromLight;
 		float3 diffuse = Diffuse(input.normal, dirToLight);
-		finalColor += ((diffuse + spec) * light.Color * colorTint * attenuate);
+		finalColor += ((diffuse + spec) * light.Color * surfaceColor * attenuate);
 	}
 
 	return float4(finalColor, 1);

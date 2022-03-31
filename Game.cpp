@@ -26,7 +26,7 @@ Game::Game(HINSTANCE hInstance)
 		true),			   // Show extra stats (fps) in title bar?
 	vsync(false)
 {
-	camera = std::make_shared<Camera>((float)this->width / this->height, DirectX::XMFLOAT3(0, 0, -1));
+	camera = std::make_shared<Camera>((float)this->width / this->height, XMFLOAT3(0, 0, -1));
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
@@ -64,53 +64,53 @@ void Game::Init()
 	lights = std::vector<Light>();
 	Light dl1 = { 
 		LIGHT_TYPE_DIRECTIONAL,				//Type
-		DirectX::XMFLOAT3(1.0, 0, 0),		//Direction
+		XMFLOAT3(1.0, 0, 0),		//Direction
 		0,									//Range
-		DirectX::XMFLOAT3(0, 0, 0),			//Position
+		XMFLOAT3(0, 0, 0),			//Position
 		1,									//Intensity
-		DirectX::XMFLOAT3(1.0, 0, 0),		//Color
+		XMFLOAT3(1.0, 1.0, 1.0),		//Color
 		0,									//SpotFalloff
-		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+		XMFLOAT3(0, 0, 0),			//Padding
 	};
 	Light dl2 = {
 		LIGHT_TYPE_DIRECTIONAL,				//Type
-		DirectX::XMFLOAT3(0, -1.0, 0),		//Direction
+		XMFLOAT3(0, -1.0, 0),		//Direction
 		0,									//Range
-		DirectX::XMFLOAT3(0, 0, 0),			//Position
+		XMFLOAT3(0, 0, 0),			//Position
 		1,									//Intensity
-		DirectX::XMFLOAT3(0, 1.0, 0),		//Color
+		XMFLOAT3(1.0, 1.0, 1.0),		//Color
 		0,									//SpotFalloff
-		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+		XMFLOAT3(0, 0, 0),			//Padding
 	};
 	Light dl3 = {
 		LIGHT_TYPE_DIRECTIONAL,				//Type
-		DirectX::XMFLOAT3(-1.0, 0, 0),		//Direction
+		XMFLOAT3(-1.0, 0, 0),		//Direction
 		0,									//Range
-		DirectX::XMFLOAT3(0, 0, 0),			//Position
+		XMFLOAT3(0, 0, 0),			//Position
 		1,									//Intensity
-		DirectX::XMFLOAT3(0, 0, 1.0),		//Color
+		XMFLOAT3(1.0, 1.0, 1.0),		//Color
 		0,									//SpotFalloff
-		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+		XMFLOAT3(0, 0, 0),			//Padding
 	};
 	Light pl1 = {
 		LIGHT_TYPE_POINT,					//Type
-		DirectX::XMFLOAT3(0, 0, 0),			//Direction
+		XMFLOAT3(0, 0, 0),			//Direction
 		5.0,								//Range
-		DirectX::XMFLOAT3(5.5, 0, -2),		//Position
+		XMFLOAT3(5.5, 0, -2),		//Position
 		1,									//Intensity
-		DirectX::XMFLOAT3(0.5, 0, 0.5),		//Color
+		XMFLOAT3(1.0, 1.0, 1.0),		//Color
 		0,									//SpotFalloff
-		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+		XMFLOAT3(0, 0, 0),			//Padding
 	};
 	Light pl2 = {
 		LIGHT_TYPE_POINT,					//Type
-		DirectX::XMFLOAT3(0, 0, 0),			//Direction
+		XMFLOAT3(0, 0, 0),			//Direction
 		5.0,								//Range
-		DirectX::XMFLOAT3(-5.5, 0, -2),		//Position
+		XMFLOAT3(-5.5, 0, -2),		//Position
 		1,									//Intensity
-		DirectX::XMFLOAT3(0.5, 0, 0.5),		//Color
+		XMFLOAT3(1.0, 1.0, 1.0),		//Color
 		0,									//SpotFalloff
-		DirectX::XMFLOAT3(0, 0, 0),			//Padding
+		XMFLOAT3(0, 0, 0),			//Padding
 	};
 	lights.push_back(dl1);
 	lights.push_back(dl2);
@@ -118,19 +118,49 @@ void Game::Init()
 	lights.push_back(pl1);
 	lights.push_back(pl2);
 
-	matWhite = std::make_shared<Material>(DirectX::XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
-	matRed = std::make_shared<Material>(DirectX::XMFLOAT4(1, 0, 0, 1), 1, vertexShader, pixelShader);
-	matGreen = std::make_shared<Material>(DirectX::XMFLOAT4(0, 1, 0, 1), 0.1, vertexShader, pixelShader);
-	matBlue = std::make_shared<Material>(DirectX::XMFLOAT4(0, 0, 1, 1), 0.75, vertexShader, pixelShader);
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneDiffuseSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_diff_2k.png").c_str(), nullptr, stoneDiffuseSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneSpecSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_spec_2k.png").c_str(), nullptr, stoneSpecSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneRoughSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_rough_2k.png").c_str(), nullptr, stoneRoughSRV.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalDiffuseSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_diff_2k.png").c_str(), nullptr, metalDiffuseSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalSpecSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_spec_2k.png").c_str(), nullptr, metalSpecSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalRoughSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_rough_2k.png").c_str(), nullptr, metalRoughSRV.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
+
+	matStone = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
+	matStone->AddTextureSRV(std::string("DiffuseMap"), stoneDiffuseSRV);
+	matStone->AddTextureSRV(std::string("SpecularMap"), stoneSpecSRV);
+	matStone->AddTextureSRV(std::string("RoughMap"), stoneRoughSRV);
+	matStone->AddSampler(std::string("BasicSampler"), samplerState);
+	matMetal = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
+	matMetal->AddTextureSRV(std::string("DiffuseMap"), metalDiffuseSRV);
+	matMetal->AddTextureSRV(std::string("SpecularMap"), metalSpecSRV);
+	matMetal->AddTextureSRV(std::string("RoughMap"), metalRoughSRV);
+	matMetal->AddSampler(std::string("BasicSampler"), samplerState);
+
 
 	gameEntities = std::vector<std::shared_ptr<GameEntity>>();
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cube.get(), matWhite, DirectX::XMFLOAT3(7.5f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cylinder.get(), matWhite, DirectX::XMFLOAT3(5.0f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(helix.get(), matWhite, DirectX::XMFLOAT3(2.5f, -1.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quad.get(), matWhite, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quadDoubleSided.get(), matWhite, DirectX::XMFLOAT3(-2.5f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(sphere.get(), matWhite, DirectX::XMFLOAT3(-5.0f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(torus.get(), matWhite, DirectX::XMFLOAT3(-7.5f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cube.get(), matStone, XMFLOAT3(7.5f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cylinder.get(), matStone, XMFLOAT3(5.0f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(helix.get(), matStone, XMFLOAT3(2.5f, -1.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quad.get(), matStone, XMFLOAT3(0.0f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quadDoubleSided.get(), matMetal, XMFLOAT3(-2.5f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(sphere.get(), matMetal, XMFLOAT3(-5.0f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(torus.get(), matMetal, XMFLOAT3(-7.5f, 0.0f, 0.0f))));
 	
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -148,10 +178,9 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	ambientColor = DirectX::XMFLOAT3(0.1f, 0.3f, 0.45f);
+	ambientColor = XMFLOAT3(0.1f, 0.3f, 0.45f);
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShader.cso").c_str());
-	customPixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"CustomPixelShader.cso").c_str());
 }
 
 

@@ -1,8 +1,8 @@
 #pragma once
 #define _USE_MATH_DEFINES
 
-#include "Input.h";
-#include "Transform.h";
+#include "Input.h"
+#include "Transform.h"
 #include <DirectXMath.h>
 #include <math.h>
 
