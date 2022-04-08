@@ -12,6 +12,7 @@
 #include "Material.h"
 #include "Lights.h"
 #include "WICTextureLoader.h"
+#include "Sky.h"
 
 class Game 
 	: public DXCore
@@ -37,19 +38,29 @@ private:
 	void LoadShaders(); 
 	void LoadMeshes();
 
+	// Helper for creating a cubemap from 6 individual textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateCubemap(
+		const wchar_t* right,
+		const wchar_t* left,
+		const wchar_t* up,
+		const wchar_t* down,
+		const wchar_t* front,
+		const wchar_t* back);
+
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//    Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 	
 	// Shaders and shader-related constructs
-	std::shared_ptr<SimplePixelShader> pixelShader;
-	std::shared_ptr<SimpleVertexShader> vertexShader;
+	std::shared_ptr<SimplePixelShader> pixelShader, skyPixelShader;
+	std::shared_ptr<SimpleVertexShader> vertexShader, skyVertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBufferVS;
 
 	std::shared_ptr<Mesh> cube, cylinder, helix, quad, quadDoubleSided, sphere, torus;
 	std::shared_ptr<Material> matStone, matMetal;
+	std::shared_ptr<Sky> sky;
 	std::vector<std::shared_ptr<GameEntity>> gameEntities;
 	std::shared_ptr<Camera> camera;
 

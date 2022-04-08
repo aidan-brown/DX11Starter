@@ -61,77 +61,7 @@ void Game::Init()
 	LoadShaders();
 	LoadMeshes();
 
-	lights = std::vector<Light>();
-	Light dl1 = { 
-		LIGHT_TYPE_DIRECTIONAL,				//Type
-		XMFLOAT3(1.0, 0, 0),		//Direction
-		0,									//Range
-		XMFLOAT3(0, 0, 0),			//Position
-		1,									//Intensity
-		XMFLOAT3(1.0, 1.0, 1.0),		//Color
-		0,									//SpotFalloff
-		XMFLOAT3(0, 0, 0),			//Padding
-	};
-	Light dl2 = {
-		LIGHT_TYPE_DIRECTIONAL,				//Type
-		XMFLOAT3(0, -1.0, 0),		//Direction
-		0,									//Range
-		XMFLOAT3(0, 0, 0),			//Position
-		1,									//Intensity
-		XMFLOAT3(1.0, 1.0, 1.0),		//Color
-		0,									//SpotFalloff
-		XMFLOAT3(0, 0, 0),			//Padding
-	};
-	Light dl3 = {
-		LIGHT_TYPE_DIRECTIONAL,				//Type
-		XMFLOAT3(-1.0, 0, 0),		//Direction
-		0,									//Range
-		XMFLOAT3(0, 0, 0),			//Position
-		1,									//Intensity
-		XMFLOAT3(1.0, 1.0, 1.0),		//Color
-		0,									//SpotFalloff
-		XMFLOAT3(0, 0, 0),			//Padding
-	};
-	Light pl1 = {
-		LIGHT_TYPE_POINT,					//Type
-		XMFLOAT3(0, 0, 0),			//Direction
-		5.0,								//Range
-		XMFLOAT3(5.5, 0, -2),		//Position
-		1,									//Intensity
-		XMFLOAT3(1.0, 1.0, 1.0),		//Color
-		0,									//SpotFalloff
-		XMFLOAT3(0, 0, 0),			//Padding
-	};
-	Light pl2 = {
-		LIGHT_TYPE_POINT,					//Type
-		XMFLOAT3(0, 0, 0),			//Direction
-		5.0,								//Range
-		XMFLOAT3(-5.5, 0, -2),		//Position
-		1,									//Intensity
-		XMFLOAT3(1.0, 1.0, 1.0),		//Color
-		0,									//SpotFalloff
-		XMFLOAT3(0, 0, 0),			//Padding
-	};
-	lights.push_back(dl1);
-	lights.push_back(dl2);
-	lights.push_back(dl3);
-	lights.push_back(pl1);
-	lights.push_back(pl2);
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneDiffuseSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_diff_2k.png").c_str(), nullptr, stoneDiffuseSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneSpecSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_spec_2k.png").c_str(), nullptr, stoneSpecSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneRoughSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_rough_2k.png").c_str(), nullptr, stoneRoughSRV.GetAddressOf());
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalDiffuseSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_diff_2k.png").c_str(), nullptr, metalDiffuseSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalSpecSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_spec_2k.png").c_str(), nullptr, metalSpecSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalRoughSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_rough_2k.png").c_str(), nullptr, metalRoughSRV.GetAddressOf());
-
+	// Sampler
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -141,18 +71,65 @@ void Game::Init()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
 
+	// Skybox
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> skyboxSRV = CreateCubemap(
+		GetFullPathTo_Wide(L"../../assets/textures/skybox/right.png").c_str(),
+		GetFullPathTo_Wide(L"../../assets/textures/skybox/left.png").c_str(),
+		GetFullPathTo_Wide(L"../../assets/textures/skybox/up.png").c_str(),
+		GetFullPathTo_Wide(L"../../assets/textures/skybox/down.png").c_str(),
+		GetFullPathTo_Wide(L"../../assets/textures/skybox/front.png").c_str(),
+		GetFullPathTo_Wide(L"../../assets/textures/skybox/back.png").c_str()
+	);
+	sky = std::make_shared<Sky>(cube, skyboxSRV, skyVertexShader, skyPixelShader, samplerState, device);
+
+	// Lights
+	lights = std::vector<Light>();
+	Light dl1 = { 
+		LIGHT_TYPE_DIRECTIONAL,				//Type
+		XMFLOAT3(0, 0, -1.0),		//Direction
+		0,									//Range
+		XMFLOAT3(0, 0, 0),			//Position
+		1,									//Intensity
+		XMFLOAT3(1.0, 1.0, 1.0),		//Color
+		0,									//SpotFalloff
+		XMFLOAT3(0, 0, 0),			//Padding
+	};
+	lights.push_back(dl1);
+
+	// Textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneDiffuseSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_diff_2k.png").c_str(), nullptr, stoneDiffuseSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneSpecSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_spec_2k.png").c_str(), nullptr, stoneSpecSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneRoughSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_rough_2k.png").c_str(), nullptr, stoneRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneNormalSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_nor_dx_2k.png").c_str(), nullptr, stoneNormalSRV.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalDiffuseSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_diff_2k.png").c_str(), nullptr, metalDiffuseSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalSpecSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_spec_2k.png").c_str(), nullptr, metalSpecSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalRoughSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_rough_2k.png").c_str(), nullptr, metalRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalNormalSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_nor_dx_2k.png").c_str(), nullptr, metalNormalSRV.GetAddressOf());
+
+	// Materials
 	matStone = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
 	matStone->AddTextureSRV(std::string("DiffuseMap"), stoneDiffuseSRV);
 	matStone->AddTextureSRV(std::string("SpecularMap"), stoneSpecSRV);
 	matStone->AddTextureSRV(std::string("RoughMap"), stoneRoughSRV);
+	matStone->AddTextureSRV(std::string("NormalMap"), stoneNormalSRV);
 	matStone->AddSampler(std::string("BasicSampler"), samplerState);
 	matMetal = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
 	matMetal->AddTextureSRV(std::string("DiffuseMap"), metalDiffuseSRV);
 	matMetal->AddTextureSRV(std::string("SpecularMap"), metalSpecSRV);
 	matMetal->AddTextureSRV(std::string("RoughMap"), metalRoughSRV);
+	matMetal->AddTextureSRV(std::string("NormalMap"), metalNormalSRV);
 	matMetal->AddSampler(std::string("BasicSampler"), samplerState);
 
-
+	// Game Entities
 	gameEntities = std::vector<std::shared_ptr<GameEntity>>();
 	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cube.get(), matStone, XMFLOAT3(7.5f, 0.0f, 0.0f))));
 	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cylinder.get(), matStone, XMFLOAT3(5.0f, 0.0f, 0.0f))));
@@ -178,9 +155,11 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	ambientColor = XMFLOAT3(0.1f, 0.3f, 0.45f);
+	ambientColor = XMFLOAT3(0.04f, 0.06f, 0.1f);
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShader.cso").c_str());
+	skyVertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"SkyVertexShader.cso").c_str());
+	skyPixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"SkyPixelShader.cso").c_str());
 }
 
 
@@ -195,6 +174,97 @@ void Game::LoadMeshes()
 	torus = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/torus.obj").c_str(), device, context);
 }
 
+// --------------------------------------------------------
+// Loads six individual textures (the six faces of a cube map), then
+// creates a blank cube map and copies each of the six textures to
+// another face.  Afterwards, creates a shader resource view for
+// the cube map and cleans up all of the temporary resources.
+// --------------------------------------------------------
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Game::CreateCubemap(
+	const wchar_t* right,
+	const wchar_t* left,
+	const wchar_t* up,
+	const wchar_t* down,
+	const wchar_t* front,
+	const wchar_t* back)
+{
+	// Load the 6 textures into an array.
+	// - We need references to the TEXTURES, not the SHADER RESOURCE VIEWS!
+	// - Specifically NOT generating mipmaps, as we usually don't need them for the sky!
+	// - Order matters here!  +X, -X, +Y, -Y, +Z, -Z
+	ID3D11Texture2D* textures[6] = {};
+	CreateWICTextureFromFile(device.Get(), right, (ID3D11Resource**)&textures[0], 0);
+	CreateWICTextureFromFile(device.Get(), left, (ID3D11Resource**)&textures[1], 0);
+	CreateWICTextureFromFile(device.Get(), up, (ID3D11Resource**)&textures[2], 0);
+	CreateWICTextureFromFile(device.Get(), down, (ID3D11Resource**)&textures[3], 0);
+	CreateWICTextureFromFile(device.Get(), front, (ID3D11Resource**)&textures[4], 0);
+	CreateWICTextureFromFile(device.Get(), back, (ID3D11Resource**)&textures[5], 0);
+
+	// We'll assume all of the textures are the same color format and resolution,
+	// so get the description of the first shader resource view
+	D3D11_TEXTURE2D_DESC faceDesc = {};
+	textures[0]->GetDesc(&faceDesc);
+
+	// Describe the resource for the cube map, which is simply 
+	// a "texture 2d array".  This is a special GPU resource format, 
+	// NOT just a C++ array of textures!!!
+	D3D11_TEXTURE2D_DESC cubeDesc = {};
+	cubeDesc.ArraySize = 6; // Cube map!
+	cubeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE; // We'll be using as a texture in a shader
+	cubeDesc.CPUAccessFlags = 0; // No read back
+	cubeDesc.Format = faceDesc.Format; // Match the loaded texture's color format
+	cubeDesc.Width = faceDesc.Width;  // Match the size
+	cubeDesc.Height = faceDesc.Height; // Match the size
+	cubeDesc.MipLevels = 1; // Only need 1
+	cubeDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE; // A CUBE MAP, not 6 separate textures
+	cubeDesc.Usage = D3D11_USAGE_DEFAULT; // Standard usage
+	cubeDesc.SampleDesc.Count = 1;
+	cubeDesc.SampleDesc.Quality = 0;
+
+	// Create the actual texture resource
+	ID3D11Texture2D* cubeMapTexture = 0;
+	device->CreateTexture2D(&cubeDesc, 0, &cubeMapTexture);
+
+	// Loop through the individual face textures and copy them,
+	// one at a time, to the cube map texure
+	for (int i = 0; i < 6; i++)
+	{
+		// Calculate the subresource position to copy into
+		unsigned int subresource = D3D11CalcSubresource(
+			0,	// Which mip (zero, since there's only one)
+			i,	// Which array element?
+			1); 	// How many mip levels are in the texture?
+
+		// Copy from one resource (texture) to another
+		context->CopySubresourceRegion(
+			cubeMapTexture, // Destination resource
+			subresource,	// Dest subresource index (one of the array elements)
+			0, 0, 0,		// XYZ location of copy
+			textures[i],	// Source resource
+			0,	// Source subresource index (we're assuming there's only one)
+			0);	// Source subresource "box" of data to copy (zero means the whole thing)
+	}
+
+	// At this point, all of the faces have been copied into the 
+	// cube map texture, so we can describe a shader resource view for it
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = cubeDesc.Format; 	// Same format as texture
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE; // Treat this as a cube!
+	srvDesc.TextureCube.MipLevels = 1;	// Only need access to 1 mip
+	srvDesc.TextureCube.MostDetailedMip = 0; // Index of the first mip we want to see
+
+	// Make the SRV
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cubeSRV;
+	device->CreateShaderResourceView(cubeMapTexture, &srvDesc, cubeSRV.GetAddressOf());
+
+	// Now that we're done, clean up the stuff we don't need anymore
+	cubeMapTexture->Release();  // Done with this particular reference (the SRV has another)
+	for (int i = 0; i < 6; i++)
+		textures[i]->Release();
+
+	// Send back the SRV, which is what we need for our shaders
+	return cubeSRV;
+}
 
 // --------------------------------------------------------
 // Handle resizing DirectX "stuff" to match the new window size.
@@ -257,6 +327,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		ge->GetMaterial()->GetPixelShader()->SetData("lights", &lights[0], (sizeof(Light) * (int)lights.size()));
 		ge->Draw(camera);
 	}
+
+	sky->Draw(context, camera);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

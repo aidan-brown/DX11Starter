@@ -24,6 +24,7 @@ public:
 	void Draw(Transform transform, std::shared_ptr<Camera>);
 private:
 	void CreateBuffers(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, Microsoft::WRL::ComPtr<ID3D11Device> device);
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer, indexBuffer, constantBufferVS;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
