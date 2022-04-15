@@ -97,35 +97,35 @@ void Game::Init()
 	lights.push_back(dl1);
 
 	// Textures
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneDiffuseSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_diff_2k.png").c_str(), nullptr, stoneDiffuseSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneSpecSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_spec_2k.png").c_str(), nullptr, stoneSpecSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneAlbedoSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_albedo.png").c_str(), nullptr, stoneAlbedoSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneRoughSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_rough_2k.png").c_str(), nullptr, stoneRoughSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_roughness.png").c_str(), nullptr, stoneRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneMetalSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_metallic.png").c_str(), nullptr, stoneMetalSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneNormalSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/medieval_blocks_05_nor_dx_2k.png").c_str(), nullptr, stoneNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_normal.png").c_str(), nullptr, stoneNormalSRV.GetAddressOf());
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalDiffuseSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_diff_2k.png").c_str(), nullptr, metalDiffuseSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_albedo.png").c_str(), nullptr, metalDiffuseSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalSpecSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_spec_2k.png").c_str(), nullptr, metalSpecSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_roughness.png").c_str(), nullptr, metalSpecSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalRoughSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_rough_2k.png").c_str(), nullptr, metalRoughSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_metallic.png").c_str(), nullptr, metalRoughSRV.GetAddressOf());
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalNormalSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/metal_plate_nor_dx_2k.png").c_str(), nullptr, metalNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_normal.png").c_str(), nullptr, metalNormalSRV.GetAddressOf());
 
 	// Materials
 	matStone = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
-	matStone->AddTextureSRV(std::string("DiffuseMap"), stoneDiffuseSRV);
-	matStone->AddTextureSRV(std::string("SpecularMap"), stoneSpecSRV);
+	matStone->AddTextureSRV(std::string("AlbedoMap"), stoneAlbedoSRV);
 	matStone->AddTextureSRV(std::string("RoughMap"), stoneRoughSRV);
+	matStone->AddTextureSRV(std::string("MetalMap"), stoneMetalSRV);
 	matStone->AddTextureSRV(std::string("NormalMap"), stoneNormalSRV);
 	matStone->AddSampler(std::string("BasicSampler"), samplerState);
 	matMetal = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
-	matMetal->AddTextureSRV(std::string("DiffuseMap"), metalDiffuseSRV);
-	matMetal->AddTextureSRV(std::string("SpecularMap"), metalSpecSRV);
+	matMetal->AddTextureSRV(std::string("AlbedoMap"), metalDiffuseSRV);
 	matMetal->AddTextureSRV(std::string("RoughMap"), metalRoughSRV);
+	matMetal->AddTextureSRV(std::string("MetalMap"), metalSpecSRV);
 	matMetal->AddTextureSRV(std::string("NormalMap"), metalNormalSRV);
 	matMetal->AddSampler(std::string("BasicSampler"), samplerState);
 
@@ -290,7 +290,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	for (std::shared_ptr<GameEntity> ge : gameEntities)
 	{
-		ge->GetTransform()->Rotate(-0.25 * deltaTime, -0.25 * deltaTime, 0);
+		ge->GetTransform()->Rotate(0, -0.25 * deltaTime, 0);
 	}
 }
 

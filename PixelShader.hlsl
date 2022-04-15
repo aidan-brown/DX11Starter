@@ -1,10 +1,10 @@
 #include "ShaderIncludes.hlsli"
 
-Texture2D DiffuseMap : register(t0);
-Texture2D SpecularMap : register(t1);
-Texture2D RoughMap : register(t2);
-Texture2D NormalMap : register(t3);
-SamplerState BasicSampler : register(s0);
+Texture2D AlbedoMap			: register(t0);
+Texture2D RoughMap			: register(t1);
+Texture2D MetalMap			: register(t2);
+Texture2D NormalMap			: register(t3);
+SamplerState BasicSampler	: register(s0);
 
 float3 Diffuse(float3 normal, float3 dirToLight) {
 	return saturate(dot(normal, dirToLight));
@@ -19,7 +19,6 @@ float Attenuate(Light light, float3 worldPos)
 
 cbuffer ExternalData : register(b0) {
 	float4 colorTint;
-	float roughness;
 	float3 cameraPosition;
 	float3 ambient;
 	Light lights[5];
@@ -40,8 +39,8 @@ float4 main(VertexToPixel input) : SV_TARGET
 	input.tangent = normalize(input.tangent);
 
 	// Diffuse
-	float3 surfaceColor = DiffuseMap.Sample(BasicSampler, input.uv).rgb;
-	surfaceColor *= colorTint;
+	float3 albedoColor = pow(AlbedoMap.Sample(BasicSampler, input.uv).rgb, 2.2);
+	albedoColor *= colorTint;
 
 	// Normal
 	float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1;
@@ -53,32 +52,34 @@ float4 main(VertexToPixel input) : SV_TARGET
 	input.normal = mul(unpackedNormal, TBN);
 
 	// Ambient
-	float3 finalColor = (ambient * surfaceColor);
+	float3 finalColor = (ambient * albedoColor);
 
 	// Specular/Rough
-	float specExponent = (1.0f - RoughMap.Sample(BasicSampler, input.uv).r) * MAX_SPECULAR_EXPONENT;
-	float specSample = SpecularMap.Sample(BasicSampler, input.uv).r;
+	float roughness = RoughMap.Sample(BasicSampler, input.uv).r;
+	float metalness = MetalMap.Sample(BasicSampler, input.uv).r;
+	float3 specularColor = lerp(F0_NON_METAL.rrr, albedoColor.rgb, metalness);
 
 	// Lights
 	float3 V = normalize(cameraPosition - input.worldPosition);
 	for (int i = 0; i < 5; i++) {
 		Light light = lights[i];
-		float3 dirFromLight = (0, 1, 0);
+		float3 dirToLight = (0, 1, 0);
 		float attenuate = 1;
 		if (light.Type == LIGHT_TYPE_DIRECTIONAL) {
-			dirFromLight = normalize(light.Direction);
+			dirToLight = normalize(-light.Direction);
 		}
 		else {
-			dirFromLight = normalize(input.worldPosition - light.Position);
+			dirToLight = normalize(light.Position - input.worldPosition);
 			attenuate = Attenuate(light, input.worldPosition);
 		}
-		float3 R = reflect(dirFromLight, input.normal);
-		float spec = specSample * pow(saturate(dot(R, V)), specExponent);
-		float3 dirToLight = -dirFromLight;
-		float3 diffuse = Diffuse(input.normal, dirToLight);
-		spec *= any(diffuse);
-		finalColor += ((diffuse + spec) * light.Color * surfaceColor * attenuate);
+		float diffuse = DiffusePBR(input.normal, dirToLight);
+		float spec = MicrofacetBRDF(input.normal, dirToLight, V, roughness, specularColor);
+
+		float3 balancedDiff = DiffuseEnergyConserve(diffuse, spec, metalness);
+		float3 total = (balancedDiff * albedoColor + spec) * light.Intensity * light.Color * attenuate;
+
+		finalColor += total;
 	}
 
-	return float4(finalColor, 1);
+	return float4(pow(finalColor, 1.0 / 2.2), 1);
 }
