@@ -1,11 +1,12 @@
 #include "Material.h"
 
-Material::Material(DirectX::XMFLOAT4 colorTint, float roughness, std::shared_ptr<SimpleVertexShader> vertexShader, std::shared_ptr<SimplePixelShader> pixelShader)
+Material::Material(std::shared_ptr<SimpleVertexShader> vertexShader, std::shared_ptr<SimplePixelShader> pixelShader, DirectX::XMFLOAT4 colorTint, DirectX::XMFLOAT2 uvScale, DirectX::XMFLOAT2 uvOffset)
 {
-	this->colorTint = colorTint;
-	this->roughness = roughness;
 	this->vertexShader = vertexShader;
 	this->pixelShader = pixelShader;
+	this->colorTint = colorTint;
+	this->uvScale = uvScale;
+	this->uvOffset = uvOffset;
 }
 
 Material::~Material()
@@ -17,9 +18,14 @@ DirectX::XMFLOAT4 Material::GetColorTint()
 	return this->colorTint;
 }
 
-float Material::GetRoughness()
+DirectX::XMFLOAT2 Material::GetUVScale()
 {
-	return this->roughness;
+	return this->uvScale;
+}
+
+DirectX::XMFLOAT2 Material::GetUVOffset()
+{
+	return this->uvOffset;
 }
 
 std::shared_ptr<SimpleVertexShader> Material::GetVertexShader()
@@ -53,9 +59,14 @@ void Material::SetColorTint(DirectX::XMFLOAT4 colorTint)
 	this->colorTint = colorTint;
 }
 
-void Material::SetRoughness(float roughness)
+void Material::SetUVScale(DirectX::XMFLOAT2 uvScale)
 {
-	this->roughness = roughness;
+	this->uvScale = uvScale;
+}
+
+void Material::SetUVOffset(DirectX::XMFLOAT2 uvOffset)
+{
+	this->uvOffset = uvOffset;
 }
 
 void Material::SetVertexShader(std::shared_ptr<SimpleVertexShader> vertexShader)

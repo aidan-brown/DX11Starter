@@ -1,4 +1,4 @@
-#include "ShaderIncludes.hlsli"
+#include "ShaderStructs.hlsli"
 
 cbuffer ExternalData : register(b0) {
 	matrix worldMatrix;
@@ -23,7 +23,7 @@ VertexToPixel main( VertexShaderInput input )
 	output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
 
 	output.normal = mul((float3x3)worldInvTranspose, input.normal);
-	output.worldPosition = mul(worldMatrix, float4(input.localPosition, 1)).xyz;
+	output.worldPos = mul(worldMatrix, float4(input.localPosition, 1)).xyz;
 
 	output.uv = input.uv;
 	output.tangent = input.tangent;

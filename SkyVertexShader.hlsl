@@ -1,25 +1,13 @@
-struct VertexShaderInput
-{
-	float3 localPosition	: POSITION;
-	float3 normal			: NORMAL;
-	float3 tangent			: TANGENT;
-	float3 uv				: TEXCOORD;
-};
-
-struct VertexToPixel
-{
-	float4 position			: SV_POSITION;
-	float3 sampleDir		: DIRECTION;
-};
+#include "ShaderStructs.hlsli"
 
 cbuffer ExternalData : register(b0) {
 	matrix viewMatrix;
 	matrix projectionMatrix;
 }
 
-VertexToPixel main(VertexShaderInput input)
+VertexToPixel_Sky main(VertexShaderInput input)
 {
-	VertexToPixel output;
+	VertexToPixel_Sky output;
 
 	matrix viewNoTranslation = viewMatrix;
 	viewNoTranslation._14 = 0;

@@ -1,27 +1,24 @@
-#include "ShaderIncludes.hlsli"
+#include "ShaderStructs.hlsli"
+#include "Lighting.hlsli"
 
 Texture2D AlbedoMap			: register(t0);
-Texture2D RoughMap			: register(t1);
-Texture2D MetalMap			: register(t2);
-Texture2D NormalMap			: register(t3);
+Texture2D EmissiveMap		: register(t1);
+Texture2D RoughMap			: register(t2);
+Texture2D MetalMap			: register(t3);
+Texture2D NormalMap			: register(t4);
 SamplerState BasicSampler	: register(s0);
 
-float3 Diffuse(float3 normal, float3 dirToLight) {
-	return saturate(dot(normal, dirToLight));
-}
-
-float Attenuate(Light light, float3 worldPos)
-{
-	float dist = distance(light.Position, worldPos);
-	float att = saturate(1.0f - (dist * dist / (light.Range * light.Range)));
-	return att * att;
-}
-
 cbuffer ExternalData : register(b0) {
-	float4 colorTint;
-	float3 cameraPosition;
+	Light lights[MAX_LIGHTS];
+	int lightCount;
+
 	float3 ambient;
-	Light lights[5];
+
+	float3 cameraPosition;
+
+	float4 colorTint;
+	float2 uvScale;
+	float2 uvOffset;
 }
 
 // --------------------------------------------------------
@@ -37,49 +34,46 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
 	input.tangent = normalize(input.tangent);
+	input.uv = input.uv * uvScale + uvOffset;
 
-	// Diffuse
-	float3 albedoColor = pow(AlbedoMap.Sample(BasicSampler, input.uv).rgb, 2.2);
-	albedoColor *= colorTint;
+	// Normal Mapping
+	float3 normalMap = NormalMapping(NormalMap, BasicSampler, input.uv, input.normal, input.tangent);
+	input.normal = normalMap;
 
-	// Normal
-	float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1;
-	float3 N = normalize(input.normal);
-	float3 T = normalize(input.tangent);
-	T = normalize(T - N * dot(T, N));
-	float3 B = cross(T, N);
-	float3x3 TBN = float3x3(T, B, N);
-	input.normal = mul(unpackedNormal, TBN);
-
-	// Ambient
-	float3 finalColor = (ambient * albedoColor);
-
-	// Specular/Rough
+	// Roughness Mapping
 	float roughness = RoughMap.Sample(BasicSampler, input.uv).r;
-	float metalness = MetalMap.Sample(BasicSampler, input.uv).r;
-	float3 specularColor = lerp(F0_NON_METAL.rrr, albedoColor.rgb, metalness);
+
+	// Metal Mapping
+	float metal = MetalMap.Sample(BasicSampler, input.uv).r;
+
+	// Sample Texture
+	float4 surfaceColor = AlbedoMap.Sample(BasicSampler, input.uv);
+	surfaceColor.rgb = pow(surfaceColor.rgb, 2.2);
+
+	// Specular Color
+	float3 specColor = lerp(F0_NON_METAL.rrr, surfaceColor.rgb, metal);
+
+	// Ambient Color
+	float3 totalLight = EmissiveMap.Sample(BasicSampler, input.uv) + ambient * surfaceColor.rgb;
 
 	// Lights
-	float3 V = normalize(cameraPosition - input.worldPosition);
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < lightCount; i++) {
 		Light light = lights[i];
-		float3 dirToLight = (0, 1, 0);
-		float attenuate = 1;
-		if (light.Type == LIGHT_TYPE_DIRECTIONAL) {
-			dirToLight = normalize(-light.Direction);
-		}
-		else {
-			dirToLight = normalize(light.Position - input.worldPosition);
-			attenuate = Attenuate(light, input.worldPosition);
-		}
-		float diffuse = DiffusePBR(input.normal, dirToLight);
-		float spec = MicrofacetBRDF(input.normal, dirToLight, V, roughness, specularColor);
+		light.Direction = normalize(light.Direction);
 
-		float3 balancedDiff = DiffuseEnergyConserve(diffuse, spec, metalness);
-		float3 total = (balancedDiff * albedoColor + spec) * light.Intensity * light.Color * attenuate;
-
-		finalColor += total;
+		switch (light.Type) {
+			case LIGHT_TYPE_DIRECTIONAL:
+				totalLight += DirLightPBR(light, input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
+				break;
+			case LIGHT_TYPE_POINT:
+				totalLight += PointLightPBR(light, input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
+				break;
+			case LIGHT_TYPE_SPOT:
+				totalLight += SpotLightPBR(light, input.normal, input.worldPos, cameraPosition, roughness, metal, surfaceColor.rgb, specColor);
+				break;
+		}
 	}
 
-	return float4(pow(finalColor, 1.0 / 2.2), 1);
+	float3 final = pow(totalLight, 1.0f / 2.2f);
+	return float4(final, 1);
 }

@@ -82,9 +82,11 @@ void Game::Init()
 	);
 	sky = std::make_shared<Sky>(cube, skyboxSRV, skyVertexShader, skyPixelShader, samplerState, device);
 
+	ambientColor = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
 	// Lights
 	lights = std::vector<Light>();
-	Light dl1 = { 
+	lights.push_back({
 		LIGHT_TYPE_DIRECTIONAL,				//Type
 		XMFLOAT3(0, 0, -1.0),		//Direction
 		0,									//Range
@@ -93,51 +95,34 @@ void Game::Init()
 		XMFLOAT3(1.0, 1.0, 1.0),		//Color
 		0,									//SpotFalloff
 		XMFLOAT3(0, 0, 0),			//Padding
-	};
-	lights.push_back(dl1);
+		});
 
 	// Textures
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneAlbedoSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_albedo.png").c_str(), nullptr, stoneAlbedoSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneRoughSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_roughness.png").c_str(), nullptr, stoneRoughSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneMetalSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_metallic.png").c_str(), nullptr, stoneMetalSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> stoneNormalSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/stone-block-wall_normal.png").c_str(), nullptr, stoneNormalSRV.GetAddressOf());
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalDiffuseSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_albedo.png").c_str(), nullptr, metalDiffuseSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalSpecSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_roughness.png").c_str(), nullptr, metalSpecSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalRoughSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_metallic.png").c_str(), nullptr, metalRoughSRV.GetAddressOf());
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> metalNormalSRV;
-	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/ornate-celtic-gold_normal.png").c_str(), nullptr, metalNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> starshipAlbedoSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/starship_albedo.png").c_str(), nullptr, starshipAlbedoSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> starshipEmissiveSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/starship_emissive.png").c_str(), nullptr, starshipEmissiveSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> starshipRoughSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/starship_roughness.png").c_str(), nullptr, starshipRoughSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> starshipMetalSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/starship_metallic.png").c_str(), nullptr, starshipMetalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> starshipNormalSRV;
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../assets/textures/starship_normal.png").c_str(), nullptr, starshipNormalSRV.GetAddressOf());
 
 	// Materials
-	matStone = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
-	matStone->AddTextureSRV(std::string("AlbedoMap"), stoneAlbedoSRV);
-	matStone->AddTextureSRV(std::string("RoughMap"), stoneRoughSRV);
-	matStone->AddTextureSRV(std::string("MetalMap"), stoneMetalSRV);
-	matStone->AddTextureSRV(std::string("NormalMap"), stoneNormalSRV);
-	matStone->AddSampler(std::string("BasicSampler"), samplerState);
-	matMetal = std::make_shared<Material>(XMFLOAT4(1, 1, 1, 1), 0.5, vertexShader, pixelShader);
-	matMetal->AddTextureSRV(std::string("AlbedoMap"), metalDiffuseSRV);
-	matMetal->AddTextureSRV(std::string("RoughMap"), metalRoughSRV);
-	matMetal->AddTextureSRV(std::string("MetalMap"), metalSpecSRV);
-	matMetal->AddTextureSRV(std::string("NormalMap"), metalNormalSRV);
-	matMetal->AddSampler(std::string("BasicSampler"), samplerState);
+	matStarship = std::make_shared<Material>(vertexShader, pixelShader, XMFLOAT4(1, 1, 1, 1), DirectX::XMFLOAT2(1, 1), DirectX::XMFLOAT2(0, 0));
+	matStarship->AddTextureSRV(std::string("AlbedoMap"), starshipAlbedoSRV);
+	matStarship->AddTextureSRV(std::string("EmissiveMap"), starshipEmissiveSRV);
+	matStarship->AddTextureSRV(std::string("RoughMap"), starshipRoughSRV);
+	matStarship->AddTextureSRV(std::string("MetalMap"), starshipMetalSRV);
+	matStarship->AddTextureSRV(std::string("NormalMap"), starshipNormalSRV);
+	matStarship->AddSampler(std::string("BasicSampler"), samplerState);
 
 	// Game Entities
 	gameEntities = std::vector<std::shared_ptr<GameEntity>>();
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cube.get(), matStone, XMFLOAT3(7.5f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(cylinder.get(), matStone, XMFLOAT3(5.0f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(helix.get(), matStone, XMFLOAT3(2.5f, -1.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quad.get(), matStone, XMFLOAT3(0.0f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(quadDoubleSided.get(), matMetal, XMFLOAT3(-2.5f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(sphere.get(), matMetal, XMFLOAT3(-5.0f, 0.0f, 0.0f))));
-	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(torus.get(), matMetal, XMFLOAT3(-7.5f, 0.0f, 0.0f))));
+	gameEntities.push_back(std::make_shared<GameEntity>(GameEntity(shuttle.get(), matStarship, XMFLOAT3(0.0f, 0.0f, 0.0f))));
+
+	ResizeAllPostProcessResources();
 	
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -155,11 +140,14 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	ambientColor = XMFLOAT3(0.04f, 0.06f, 0.1f);
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShader.cso").c_str());
 	skyVertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"SkyVertexShader.cso").c_str());
 	skyPixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"SkyPixelShader.cso").c_str());
+	fullscreenVS = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"FullscreenVS.cso").c_str());
+	gaussianBlurPS = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"GaussianBlurPS.cso").c_str());
+	bloomExtractPS = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"BloomExtractPS.cso").c_str());
+	bloomCombinePS = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"BloomCombinePS.cso").c_str());
 }
 
 
@@ -172,6 +160,122 @@ void Game::LoadMeshes()
 	quadDoubleSided = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/quad_double_sided.obj").c_str(), device, context);
 	sphere = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/sphere.obj").c_str(), device, context);
 	torus = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/torus.obj").c_str(), device, context);
+	shuttle = std::make_shared<Mesh>(GetFullPathTo("../../assets/meshes/starship.obj").c_str(), device, context);
+}
+
+void Game::ResizeAllPostProcessResources()
+{
+	ResizeOnePostProcessResource(ppRTV, ppSRV, 1.0f, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	ResizeOnePostProcessResource(bloomExtractRTV, bloomExtractSRV, 0.5f, DXGI_FORMAT_R16G16B16A16_FLOAT);
+
+	float rtScale = 0.5f;
+	for (int i = 0; i < MaxBloomLevels; i++)
+	{
+		ResizeOnePostProcessResource(blurHorizontalRTV[i], blurHorizontalSRV[i], rtScale, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		ResizeOnePostProcessResource(blurVerticalRTV[i], blurVerticalSRV[i], rtScale, DXGI_FORMAT_R16G16B16A16_FLOAT);
+
+		rtScale *= 0.5f;
+	}
+}
+
+void Game::ResizeOnePostProcessResource(
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv,
+	float renderTargetScale,
+	DXGI_FORMAT format)
+{
+	rtv.Reset();
+	srv.Reset();
+
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = (unsigned int)(width * renderTargetScale);
+	textureDesc.Height = (unsigned int)(height * renderTargetScale);
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; // Will render to it and sample from it!
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = format;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppTexture;
+	device->CreateTexture2D(&textureDesc, 0, ppTexture.GetAddressOf());
+
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+	device->CreateRenderTargetView(ppTexture.Get(), &rtvDesc, rtv.ReleaseAndGetAddressOf());
+
+	device->CreateShaderResourceView(ppTexture.Get(), 0, srv.ReleaseAndGetAddressOf());
+}
+
+void Game::BloomExtract()
+{
+	D3D11_VIEWPORT vp = {};
+	vp.Width = width * 0.5f;
+	vp.Height = height * 0.5f;
+	vp.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &vp);
+
+	context->OMSetRenderTargets(1, bloomExtractRTV.GetAddressOf(), 0);
+
+	bloomExtractPS->SetShader();
+	bloomExtractPS->SetShaderResourceView("pixels", ppSRV.Get());
+	bloomExtractPS->SetFloat("bloomThreshold", bloomThreshold);
+	bloomExtractPS->CopyAllBufferData();
+
+	context->Draw(3, 0);
+}
+
+void Game::SingleDirectionBlur(float renderTargetScale, DirectX::XMFLOAT2 blurDirection, Microsoft::WRL::ComPtr<ID3D11RenderTargetView> target, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sourceTexture)
+{
+	D3D11_VIEWPORT vp = {};
+	vp.Width = width * renderTargetScale;
+	vp.Height = height * renderTargetScale;
+	vp.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &vp);
+
+	context->OMSetRenderTargets(1, target.GetAddressOf(), 0);
+
+	gaussianBlurPS->SetShader();
+	gaussianBlurPS->SetShaderResourceView("pixels", sourceTexture.Get());
+	gaussianBlurPS->SetFloat2("pixelUVSize", XMFLOAT2(1.0f / (width * renderTargetScale), 1.0f / (height * renderTargetScale)));
+	gaussianBlurPS->SetFloat2("blurDirection", blurDirection);
+	gaussianBlurPS->CopyAllBufferData();
+
+	context->Draw(3, 0);
+}
+
+void Game::BloomCombine()
+{
+	D3D11_VIEWPORT vp = {};
+	vp.Width = (float)width;
+	vp.Height = (float)height;
+	vp.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &vp);
+
+	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+
+	bloomCombinePS->SetShader();
+	bloomCombinePS->SetShaderResourceView("originalPixels", ppSRV.Get());
+	bloomCombinePS->SetShaderResourceView("bloomedPixels0", blurVerticalSRV[0].Get());
+	bloomCombinePS->SetShaderResourceView("bloomedPixels1", blurVerticalSRV[1].Get());
+	bloomCombinePS->SetShaderResourceView("bloomedPixels2", blurVerticalSRV[2].Get());
+	bloomCombinePS->SetShaderResourceView("bloomedPixels3", blurVerticalSRV[3].Get());
+	bloomCombinePS->SetShaderResourceView("bloomedPixels4", blurVerticalSRV[4].Get());
+
+	bloomCombinePS->SetFloat("intensityLevel0", bloomLevelIntensities[0]);
+	bloomCombinePS->SetFloat("intensityLevel1", bloomLevelIntensities[1]);
+	bloomCombinePS->SetFloat("intensityLevel2", bloomLevelIntensities[2]);
+	bloomCombinePS->SetFloat("intensityLevel3", bloomLevelIntensities[3]);
+	bloomCombinePS->SetFloat("intensityLevel4", bloomLevelIntensities[4]);
+	bloomCombinePS->CopyAllBufferData();
+
+	context->Draw(3, 0);
 }
 
 // --------------------------------------------------------
@@ -290,7 +394,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	for (std::shared_ptr<GameEntity> ge : gameEntities)
 	{
-		ge->GetTransform()->Rotate(0, -0.25 * deltaTime, 0);
+		ge->GetTransform()->Rotate(-0.01 * deltaTime, 0, -0.005 * deltaTime);
 	}
 }
 
@@ -312,6 +416,18 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	{
+		context->ClearRenderTargetView(ppRTV.Get(), color);
+		context->ClearRenderTargetView(bloomExtractRTV.Get(), color);
+
+		for (int i = 0; i < MaxBloomLevels; i++) {
+			context->ClearRenderTargetView(blurHorizontalRTV[i].Get(), color);
+			context->ClearRenderTargetView(blurVerticalRTV[i].Get(), color);
+		}
+
+		context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), depthStencilView.Get());
+	}
+
 
 	// Ensure the pipeline knows how to interpret the data (numbers)
 	// from the vertex buffer.  
@@ -323,12 +439,43 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Draw the entity
 	for (std::shared_ptr<GameEntity> ge : gameEntities)
 	{
-		ge->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
 		ge->GetMaterial()->GetPixelShader()->SetData("lights", &lights[0], (sizeof(Light) * (int)lights.size()));
+		ge->GetMaterial()->GetPixelShader()->SetInt("lightCount", (int)lights.size());
+		ge->GetMaterial()->GetPixelShader()->SetFloat3("ambient", ambientColor);
 		ge->Draw(camera);
 	}
 
 	sky->Draw(context, camera);
+
+	{
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		ID3D11Buffer* nothing = 0;
+		context->IASetIndexBuffer(0, DXGI_FORMAT_R32_UINT, 0);
+		context->IASetVertexBuffers(0, 1, &nothing, &stride, &offset);
+
+		fullscreenVS->SetShader();
+		context->PSSetSamplers(0, 1, ppSampler.GetAddressOf());
+
+		BloomExtract();
+
+		if (bloomLevels >= 1) {
+			float levelScale = 0.5f;
+			SingleDirectionBlur(levelScale, XMFLOAT2(1, 0), blurHorizontalRTV[0], bloomExtractSRV);
+			SingleDirectionBlur(levelScale, XMFLOAT2(0, 1), blurVerticalRTV[0], blurHorizontalSRV[0]);
+
+			for (int i = 1; i < bloomLevels; i++) {
+				levelScale *= 0.5f;
+				SingleDirectionBlur(levelScale, XMFLOAT2(1, 0), blurHorizontalRTV[i], blurVerticalSRV[i - 1]);
+				SingleDirectionBlur(levelScale, XMFLOAT2(0, 1), blurVerticalRTV[i], blurHorizontalSRV[i]);
+			}
+		}
+
+		BloomCombine();
+
+		ID3D11ShaderResourceView* nullSRVs[16] = {};
+		context->PSSetShaderResources(0, 16, nullSRVs);
+	}
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

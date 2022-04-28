@@ -50,6 +50,8 @@ void GameEntity::Draw(std::shared_ptr<Camera> camera)
 
 	ps->SetFloat4("colorTint", this->material->GetColorTint());
 	ps->SetFloat3("cameraPosition", camera->GetTransform().GetPosition());
+	ps->SetFloat2("uvScale", this->material->GetUVScale());
+	ps->SetFloat2("uvOffset", this->material->GetUVOffset());
 
 	this->material->PrepareMaterial();
 
